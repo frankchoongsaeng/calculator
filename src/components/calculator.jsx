@@ -14,7 +14,7 @@ const actionmap = {
 
 function Calculator() {
 	const {
-		state: { text, currentAction },
+		state: { text, currentAction, history },
 		dispatch,
 	} = useContext(AppContext);
 
@@ -26,11 +26,39 @@ function Calculator() {
 		dispatch({ type: 'DELETE' });
 	};
 
+	const evaluate = () => {
+		dispatch({ type: 'EVALUATE' });
+	};
+
 	const actionHandler = e => {
 		const action = e.target.value;
 		if (currentAction) {
+			let lastChar = text[text.length - 1];
+			if (
+				lastChar === '+' ||
+				lastChar === '-' ||
+				lastChar === '/' ||
+				lastChar === 'x'
+			) {
+				dispatch({
+					type: 'UPDATE_ACTION',
+					payload: action,
+				});
+				dispatch({
+					type: 'DELETE',
+				});
+				return dispatch({
+					type: 'UPDATE_TEXT',
+					payload: action,
+				});
+			}
+
 			let parsed = parser(text);
 			let added_values = actionmap[currentAction](...parsed);
+			dispatch({
+				type: 'UPDATE_HISTORY',
+				payload: `${text}=${added_values}`,
+			});
 			dispatch({
 				type: 'SET_TEXT',
 				payload: added_values + action,
@@ -46,9 +74,32 @@ function Calculator() {
 		dispatch({ type: 'CLEAR' });
 	};
 
+	const toggleHistory = () => {
+		console.log(history);
+	};
+
 	return (
-		<div>
+		<div className='relative'>
 			<div className='calc_layout'>
+				<button
+					onClick={toggleHistory}
+					className='history-button'
+				>
+					<svg
+						xmlns='http://www.w3.org/2000/svg'
+						className='h-6 w-6'
+						fill='none'
+						viewBox='0 0 24 24'
+						stroke='currentColor'
+					>
+						<path
+							strokeLinecap='round'
+							strokeLinejoin='round'
+							strokeWidth={2}
+							d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+						/>
+					</svg>
+				</button>
 				<Output text={text} />
 				<button onClick={clear} className='span-3 clear'>
 					Clear
@@ -83,7 +134,7 @@ function Calculator() {
 				<Button value='+' handler={actionHandler} />
 				<Button value='.' handler={updateText} />
 				<Button value='0' handler={updateText} />
-				<Button value='=' handler={actionHandler} />
+				<Button value='=' handler={evaluate} />
 				<Button value='/' handler={actionHandler} />
 			</div>
 		</div>
