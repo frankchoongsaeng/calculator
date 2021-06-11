@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useContext } from 'react';
 import Button from './button';
 import Output from './output';
 import { sum, divide, multiply, subtract } from '../utils/math';
 import { parser } from '../utils/parser';
+import { AppContext } from './appstate';
 
 const actionmap = {
 	'+': sum,
@@ -12,35 +13,37 @@ const actionmap = {
 };
 
 function Calculator() {
-	const [text, setText] = useState('');
-	const [currentAction, setCurrentAction] = useState(null);
+	const {
+		state: { text, currentAction },
+		dispatch,
+	} = useContext(AppContext);
 
 	const updateText = e => {
-		setText(prev => prev + e.target.value);
+		dispatch({ type: 'UPDATE_TEXT', payload: e.target.value });
 	};
 
 	const del = () => {
-		setText(prev => prev.slice(0, prev.length - 1));
+		dispatch({ type: 'DELETE' });
 	};
 
 	const actionHandler = e => {
 		const action = e.target.value;
-
 		if (currentAction) {
 			let parsed = parser(text);
 			let added_values = actionmap[currentAction](...parsed);
-			setText(added_values);
-			updateText(e);
-			setCurrentAction(action);
+			dispatch({
+				type: 'SET_TEXT',
+				payload: added_values + action,
+			});
+			dispatch({ type: 'SET_ACTION', payload: action });
 		} else {
-			setCurrentAction(action);
+			dispatch({ type: 'SET_ACTION', payload: action });
 			updateText(e);
 		}
 	};
 
 	const clear = () => {
-		setText('');
-		setCurrentAction(null);
+		dispatch({ type: 'CLEAR' });
 	};
 
 	return (
